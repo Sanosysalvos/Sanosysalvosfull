@@ -1,0 +1,23 @@
+# IDEs y configuración
+
+.idea/
+.vscode/
+
+# Configuración de Docker, BD y Entorno
+
+docker-compose.yaml
+init.sql
+.env
+.gitattributes
+package-lock.json
+
+# Bloquear TODO el Backend y Microservicios
+
+bff/
+ms-matching/
+ms-notification/
+ms-pets/
+ms-sightings/
+ms-users/
+
+frontend/.next/

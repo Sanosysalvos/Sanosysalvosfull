@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  sanos-db:
+    image: postgis/postgis:15-3.4
+    container_name: sanos-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sanos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ms-users:
+    build: ./ms-users
+    container_name: ms-users
+    restart: always
+    ports:
+      - "${PORT_USERS}:${PORT_USERS}"
+    depends_on:
+      sanos-db:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=${PORT_USERS}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://sanos-db:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    networks:
+      - sanos-network
+
+  ms-pets:
+    build: ./ms-pets
+    container_name: ms-pets
+    restart: always
+    ports:
+      - "${PORT_PETS}:${PORT_PETS}"
+    depends_on:
+      sanos-db:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=${PORT_PETS}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://sanos-db:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - MS_USERS_URL=http://ms-users:${PORT_USERS}
+    networks:
+      - sanos-network
+
+  ms-notification:
+    build: ./ms-notification
+    container_name: ms-notification
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+    networks:
+      - sanos-network
+
+  ms-sightings:
+    build: ./ms-sightings
+    container_name: ms-sightings
+    restart: always
+    ports:
+      - "${PORT_SIGHTINGS}:${PORT_SIGHTINGS}"
+    depends_on:
+      sanos-db:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=${PORT_SIGHTINGS}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://sanos-db:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    networks:
+      - sanos-network
+
+  ms-matching:
+    build: ./ms-matching
+    container_name: ms-matching
+    restart: always
+    ports:
+      - "${PORT_MATCHING}:${PORT_MATCHING}"
+    depends_on:
+      ms-sightings:
+        condition: service_started
+      ms-pets:
+        condition: service_started
+    environment:
+      - SERVER_PORT=${PORT_MATCHING}
+      - MS_PETS_URL=http://ms-pets:${PORT_PETS}
+      - MS_SIGHTINGS_URL=http://ms-sightings:${PORT_SIGHTINGS}
+      - MS_NOTIFICATION_URL=http://ms-notification:8083
+      - MS_USERS_URL=http://ms-users:${PORT_USERS}
+    networks:
+      - sanos-network
+
+  bff:
+    build: ./bff
+    container_name: bff
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      ms-users:
+        condition: service_started
+      ms-pets:
+        condition: service_started
+      ms-notification:
+        condition: service_started
+      ms-sightings:
+        condition: service_started
+      ms-matching:
+        condition: service_started
+    environment:
+      - SERVER_PORT=8080
+      - MS_USERS_URL=http://ms-users:${PORT_USERS}
+      - MS_PETS_URL=http://ms-pets:${PORT_PETS}
+      - MS_NOTIFICATION_URL=http://ms-notification:8083
+      - MS_SIGHTINGS_URL=http://ms-sightings:${PORT_SIGHTINGS}
+      - MS_MATCHING_URL=http://ms-matching:${PORT_MATCHING}
+    networks:
+      - sanos-network
+
+networks:
+  sanos-network:
+    driver: bridge
+
+volumes:
+  pgdata:

@@ -1,0 +1,25 @@
+# Etapa 1: Construcción (Maven con Temurin 17)
+FROM maven:3.8.5-eclipse-temurin-17 AS build
+WORKDIR /app
+
+# Copiamos el archivo de configuración de dependencias
+COPY pom.xml .
+
+# Copiamos el código fuente
+COPY src ./src
+
+# Construimos el JAR saltando los tests para acelerar el despliegue
+RUN mvn clean package -DskipTests
+
+# Etapa 2: Ejecución (JRE 17 - Imagen ligera)
+FROM eclipse-temurin:17-jre-focal
+WORKDIR /app
+
+# Copiamos solo el JAR generado en la etapa anterior
+COPY --from=build /app/target/*.jar app.jar
+
+# Exponemos el puerto 8083 solicitado
+EXPOSE 8083
+
+# Arrancamos la aplicación
+ENTRYPOINT ["java", "-jar", "app.jar"]
