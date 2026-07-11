@@ -18,6 +18,47 @@ export default function PerfilPage() {
   } | null>(null);
   const [mascotaAEditar, setMascotaAEditar] = useState<any | null>(null);
 
+  const normalizarValorSelect = (
+    valor: string | undefined | null,
+    opciones: string[],
+  ) => {
+    const normalizado = String(valor ?? "")
+      .trim()
+      .toUpperCase();
+    return opciones.includes(normalizado) ? normalizado : opciones[0];
+  };
+
+  const prepararMascotaParaEdicion = (mascota: any) => ({
+    ...mascota,
+    especie: normalizarValorSelect(mascota?.especie, [
+      "PERRO",
+      "GATO",
+      "AVE",
+      "OTRO",
+    ]),
+    color: normalizarValorSelect(mascota?.color, [
+      "NEGRO",
+      "BLANCO",
+      "CAFE",
+      "GRIS",
+      "AMARILLO",
+      "ATIGRADO",
+      "MANCHADO",
+      "OTRO",
+    ]),
+    tamanio: normalizarValorSelect(mascota?.tamanio, [
+      "PEQUEÑO",
+      "MEDIANO",
+      "GRANDE",
+    ]),
+    edad: normalizarValorSelect(mascota?.edad, [
+      "CACHORRO",
+      "JOVEN",
+      "ADULTO",
+      "SENIOR",
+    ]),
+  });
+
   const handleGuardarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -81,6 +122,40 @@ export default function PerfilPage() {
   const handleGuardarCambios = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!mascotaAEditar) return;
+
+    const mascotaPayload = {
+      ...mascotaAEditar,
+      especie: normalizarValorSelect(mascotaAEditar?.especie, [
+        "PERRO",
+        "GATO",
+        "AVE",
+        "OTRO",
+      ]),
+      color: normalizarValorSelect(mascotaAEditar?.color, [
+        "NEGRO",
+        "BLANCO",
+        "CAFE",
+        "GRIS",
+        "AMARILLO",
+        "ATIGRADO",
+        "MANCHADO",
+        "OTRO",
+      ]),
+      tamanio: normalizarValorSelect(mascotaAEditar?.tamanio, [
+        "PEQUEÑO",
+        "MEDIANO",
+        "GRANDE",
+      ]),
+      edad: normalizarValorSelect(mascotaAEditar?.edad, [
+        "CACHORRO",
+        "JOVEN",
+        "ADULTO",
+        "SENIOR",
+      ]),
+      estado: String(mascotaAEditar?.estado || "PERDIDO").toUpperCase(),
+    };
+
     try {
       const currentUser = auth.currentUser;
       const token = currentUser ? await currentUser.getIdToken() : "";
@@ -93,7 +168,7 @@ export default function PerfilPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(mascotaAEditar),
+          body: JSON.stringify(mascotaPayload),
         },
       );
 
@@ -101,11 +176,11 @@ export default function PerfilPage() {
         setPerfil((prev: any) => ({
           ...prev,
           mascotas: prev.mascotas.map((m: any) =>
-            m.id === mascotaAEditar.id ? mascotaAEditar : m,
+            m.id === mascotaAEditar.id ? mascotaPayload : m,
           ),
         }));
 
-        toast.success(`¡${mascotaAEditar.nombre} actualizada correctamente!`);
+        toast.success(`¡${mascotaPayload.nombre} actualizada correctamente!`);
         setMascotaAEditar(null);
       } else {
         toast.error("Hubo un problema al guardar los cambios");
@@ -368,7 +443,7 @@ export default function PerfilPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setMascotaAEditar(m);
+                        setMascotaAEditar(prepararMascotaParaEdicion(m));
                       }}
                       className="mt-auto flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-colors"
                     >
@@ -463,17 +538,21 @@ export default function PerfilPage() {
                   <label className="text-[10px] font-extrabold text-slate-400 uppercase ml-1">
                     Edad Aproximada
                   </label>
-                  <input
-                    type="number"
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium"
-                    value={mascotaAEditar.edad}
+                  <select
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium appearance-none"
+                    value={mascotaAEditar.edad || "ADULTO"}
                     onChange={(e) =>
                       setMascotaAEditar({
                         ...mascotaAEditar,
-                        edad: parseInt(e.target.value),
+                        edad: e.target.value,
                       })
                     }
-                  />
+                  >
+                    <option value="CACHORRO">CACHORRO</option>
+                    <option value="JOVEN">JOVEN</option>
+                    <option value="ADULTO">ADULTO</option>
+                    <option value="SENIOR">SENIOR</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1">
@@ -482,7 +561,7 @@ export default function PerfilPage() {
                   </label>
                   <select
                     className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium appearance-none"
-                    value={mascotaAEditar.especie}
+                    value={mascotaAEditar.especie || "PERRO"}
                     onChange={(e) =>
                       setMascotaAEditar({
                         ...mascotaAEditar,
@@ -490,10 +569,55 @@ export default function PerfilPage() {
                       })
                     }
                   >
-                    <option value="Perro">Perro</option>
-                    <option value="Gato">Gato</option>
-                    <option value="Ave">Ave</option>
-                    <option value="Otro">Otro</option>
+                    <option value="PERRO">PERRO</option>
+                    <option value="GATO">GATO</option>
+                    <option value="AVE">AVE</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 uppercase ml-1">
+                    Color
+                  </label>
+                  <select
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium appearance-none"
+                    value={mascotaAEditar.color || "NEGRO"}
+                    onChange={(e) =>
+                      setMascotaAEditar({
+                        ...mascotaAEditar,
+                        color: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="NEGRO">NEGRO</option>
+                    <option value="BLANCO">BLANCO</option>
+                    <option value="CAFE">CAFE</option>
+                    <option value="GRIS">GRIS</option>
+                    <option value="AMARILLO">AMARILLO</option>
+                    <option value="ATIGRADO">ATIGRADO</option>
+                    <option value="MANCHADO">MANCHADO</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold text-slate-400 uppercase ml-1">
+                    Tamaño
+                  </label>
+                  <select
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-700 font-medium appearance-none"
+                    value={mascotaAEditar.tamanio || "MEDIANO"}
+                    onChange={(e) =>
+                      setMascotaAEditar({
+                        ...mascotaAEditar,
+                        tamanio: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="PEQUEÑO">PEQUEÑO</option>
+                    <option value="MEDIANO">MEDIANO</option>
+                    <option value="GRANDE">GRANDE</option>
                   </select>
                 </div>
 

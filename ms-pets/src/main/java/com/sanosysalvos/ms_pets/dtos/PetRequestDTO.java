@@ -23,9 +23,10 @@ public class PetRequestDTO {
 
     private String color;
 
-    @NotNull(message = "La edad es obligatoria.")
-    @PositiveOrZero(message = "La edad no puede ser un número negativo.")
-    private Integer edad;
+    @NotBlank(message = "La edad es obligatoria.")
+    private String edad;
+
+    private String tamanio;
 
     @NotBlank(message = "Debes proporcionar una descripción detallada del extravío.")
     private String descripcion;

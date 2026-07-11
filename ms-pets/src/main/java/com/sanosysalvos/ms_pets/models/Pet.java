@@ -26,7 +26,9 @@ public class Pet {
 
     private String color;
 
-    private Integer edad;
+    private String edad;
+
+    private String tamanio;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String descripcion;

@@ -12,7 +12,8 @@ public class PetDTO {
     private String nombre;
     private String especie;
     private String color;
-    private Integer edad;
+    private String edad;
+    private String tamanio;
     private String descripcion;
     private LocalDate fechaPerdida;
     private String estado;

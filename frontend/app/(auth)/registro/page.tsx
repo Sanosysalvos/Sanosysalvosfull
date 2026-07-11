@@ -52,7 +52,8 @@ export default function RegisterPage() {
     }
 
     const expectedDv = 11 - (sum % 11);
-    const dvDigit = expectedDv === 11 ? "0" : expectedDv === 10 ? "K" : expectedDv.toString();
+    const dvDigit =
+      expectedDv === 11 ? "0" : expectedDv === 10 ? "K" : expectedDv.toString();
 
     return dv === dvDigit;
   };
@@ -84,7 +85,7 @@ export default function RegisterPage() {
       newErrors.rut = "RUT chileno inválido";
     }
 
-    if (!/^(\+569\d{9})$/.test(formData.celular)) {
+    if (!/^(\+569\d{8})$/.test(formData.celular)) {
       newErrors.celular = "Formato inválido. Use +569 seguido de 9 dígitos";
     }
 
@@ -373,7 +374,9 @@ export default function RegisterPage() {
                   required
                   type="password"
                   className={`block w-full pl-10 pr-3 py-2 bg-white text-slate-900 placeholder:text-slate-400 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm ${
-                    errors.confirmPassword ? "border-red-500" : "border-slate-300"
+                    errors.confirmPassword
+                      ? "border-red-500"
+                      : "border-slate-300"
                   }`}
                   onChange={(e) =>
                     setFormData({
@@ -383,7 +386,9 @@ export default function RegisterPage() {
                   }
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
             </div>

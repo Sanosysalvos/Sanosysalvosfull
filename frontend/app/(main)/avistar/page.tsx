@@ -29,7 +29,12 @@ const MapSelector = dynamic(
   },
 );
 
-const ESPECIES = ["Perro", "Gato", "Ave", "Otro"];
+const ESPECIES = [
+  { value: "PERRO", label: "Perro" },
+  { value: "GATO", label: "Gato" },
+  { value: "AVE", label: "Ave" },
+  { value: "OTRO", label: "Otro" },
+];
 
 export default function AvistarPage() {
   const router = useRouter();
@@ -41,8 +46,10 @@ export default function AvistarPage() {
   } | null>(null);
   // 🔄 CAMBIO 2: Agregar estado para la dirección formateada
   const [direccionFormateada, setDireccionFormateada] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [color, setColor] = useState("");
+  const [especie, setEspecie] = useState("PERRO");
+  const [color, setColor] = useState("NEGRO");
+  const [tamanio, setTamanio] = useState("MEDIANO");
+  const [edadAprox, setEdadAprox] = useState("ADULTO");
   const [comentario, setComentario] = useState("");
   const [fotoUrl, setFotoUrl] = useState("");
   const [mascotasPerdidas, setMascotasPerdidas] = useState<any[]>([]);
@@ -158,11 +165,6 @@ export default function AvistarPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    if (color && (color.length < 3 || color.length > 50)) {
-      setError("El color debe tener entre 3 y 50 caracteres.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
     if (comentario.length < 10 || comentario.length > 500) {
       setError("El comentario debe tener entre 10 y 500 caracteres.");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -176,7 +178,9 @@ export default function AvistarPage() {
       latitud: coordenadas.lat,
       longitud: coordenadas.lng,
       especie: especie.toUpperCase(),
-      color: color || "No especificado",
+      color: color.toUpperCase(),
+      tamanio: tamanio,
+      edadAprox: edadAprox,
       comentario,
       fotoUrl,
     };
@@ -379,41 +383,76 @@ export default function AvistarPage() {
                   <div className="flex gap-2 mt-1 flex-wrap">
                     {ESPECIES.map((esp) => (
                       <button
-                        key={esp}
+                        key={esp.value}
                         type="button"
                         onClick={() => {
-                          setEspecie(esp);
+                          setEspecie(esp.value);
                           setMascotaSeleccionada(null);
                           setBusqueda("");
                         }}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                          especie === esp
+                          especie === esp.value
                             ? "bg-indigo-600 text-white border-indigo-600 shadow"
                             : "bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300"
                         }`}
                       >
-                        {esp}
+                        {esp.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                      Color principal
+                    </label>
+                    <select
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                    >
+                      <option value="NEGRO">NEGRO</option>
+                      <option value="BLANCO">BLANCO</option>
+                      <option value="CAFE">CAFE</option>
+                      <option value="GRIS">GRIS</option>
+                      <option value="AMARILLO">AMARILLO</option>
+                      <option value="ATIGRADO">ATIGRADO</option>
+                      <option value="MANCHADO">MANCHADO</option>
+                      <option value="OTRO">OTRO</option>
+                    </select>
+                  </div>
+
+                  <div className="relative">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                      Tamaño aproximado
+                    </label>
+                    <select
+                      value={tamanio}
+                      onChange={(e) => setTamanio(e.target.value)}
+                      className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                    >
+                      <option value="PEQUEÑO">PEQUEÑO</option>
+                      <option value="MEDIANO">MEDIANO</option>
+                      <option value="GRANDE">GRANDE</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="relative">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-                    Color principal
+                    Edad aproximada
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: negro con manchas blancas"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
+                  <select
+                    value={edadAprox}
+                    onChange={(e) => setEdadAprox(e.target.value)}
                     className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
-                  />
-                  <div
-                    className={`text-[10px] text-right mt-1 ${color && (color.length < 3 || color.length > 50) ? "text-red-500" : "text-slate-400"}`}
                   >
-                    {color.length} / 50
-                  </div>
+                    <option value="CACHORRO">CACHORRO</option>
+                    <option value="JOVEN">JOVEN</option>
+                    <option value="ADULTO">ADULTO</option>
+                    <option value="SENIOR">SENIOR</option>
+                  </select>
                 </div>
 
                 <div className="relative">
@@ -548,8 +587,7 @@ export default function AvistarPage() {
                   !fotoUrl ||
                   !especie ||
                   comentario.length < 10 ||
-                  comentario.length > 500 ||
-                  (color.length > 0 && (color.length < 3 || color.length > 50))
+                  comentario.length > 500
                 }
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:opacity-100 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center gap-2"
               >

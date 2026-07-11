@@ -38,9 +38,11 @@ public class MatchingService {
     private double radioKm;
 
     // Pesos del motor de coincidencias (deben sumar 100)
-    private static final double PESO_DISTANCIA    = 35.0;
-    private static final double PESO_DESCRIPCION  = 35.0;
-    private static final double PESO_ESPECIE      = 30.0;
+    private static final double PESO_DISTANCIA   = 30.0;
+    private static final double PESO_DESCRIPCION = 20.0;
+    private static final double PESO_ESPECIE     = 25.0;
+    private static final double PESO_COLOR       = 15.0;
+    private static final double PESO_TAMANIO     = 10.0;
 
     // ---------------------------------------------------------------
     // MÉTODO PRINCIPAL REPARADO (SOPORTA FLUJO PREDICTIVO GLOBAL)
@@ -83,24 +85,32 @@ public class MatchingService {
         double mejorScoreDistancia = 0.0;
         double mejorScoreDescripcion = 0.0;
         double mejorScoreEspecie = 0.0;
+        double mejorScoreColor = 0.0;
+        double mejorScoreTamanio = 0.0;
 
         for (PetDTO pet : mascotasAEvaluar) {
             double scoreDistancia   = calcularScoreDistancia(sighting, pet);
             double scoreDescripcion = calcularScoreDescripcion(sighting, pet);
             double scoreEspecie     = calcularScoreEspecie(sighting, pet);
+            double scoreColor       = calcularScoreColor(sighting, pet);
+            double scoreTamanio     = calcularScoreTamanio(sighting, pet);
 
             double porcentajeTotal =
                 (scoreDistancia   * PESO_DISTANCIA   / 100.0) +
                 (scoreDescripcion * PESO_DESCRIPCION / 100.0) +
-                (scoreEspecie     * PESO_ESPECIE     / 100.0);
+                (scoreEspecie     * PESO_ESPECIE     / 100.0) +
+                (scoreColor       * PESO_COLOR       / 100.0) +
+                (scoreTamanio     * PESO_TAMANIO     / 100.0);
 
             porcentajeTotal = redondear(porcentajeTotal);
 
-            log.info("Evaluando Mascota '{}' ({}) -> Total: {}% | Distancia: {}% | Desc: {}% | Especie: {}%",
-                    pet.getNombre(), pet.getId(), porcentajeTotal, 
+            log.info("Evaluando Mascota '{}' ({}) -> Total: {}% | Distancia: {}% | Desc: {}% | Especie: {}% | Color: {}% | Tamanio: {}%",
+                    pet.getNombre(), pet.getId(), porcentajeTotal,
                     redondear(scoreDistancia * PESO_DISTANCIA / 100.0),
                     redondear(scoreDescripcion * PESO_DESCRIPCION / 100.0),
-                    redondear(scoreEspecie * PESO_ESPECIE / 100.0));
+                    redondear(scoreEspecie * PESO_ESPECIE / 100.0),
+                    redondear(scoreColor * PESO_COLOR / 100.0),
+                    redondear(scoreTamanio * PESO_TAMANIO / 100.0));
 
             // Nos quedamos con el match más alto que encontremos
             if (porcentajeTotal > maxPorcentajeTotal) {
@@ -109,6 +119,8 @@ public class MatchingService {
                 mejorScoreDistancia = scoreDistancia;
                 mejorScoreDescripcion = scoreDescripcion;
                 mejorScoreEspecie = scoreEspecie;
+                mejorScoreColor = scoreColor;
+                mejorScoreTamanio = scoreTamanio;
             }
         }
 
@@ -140,6 +152,8 @@ public class MatchingService {
             redondear(mejorScoreDistancia   * PESO_DISTANCIA   / 100.0),
             redondear(mejorScoreDescripcion * PESO_DESCRIPCION / 100.0),
             redondear(mejorScoreEspecie     * PESO_ESPECIE     / 100.0),
+            redondear(mejorScoreColor       * PESO_COLOR       / 100.0),
+            redondear(mejorScoreTamanio     * PESO_TAMANIO     / 100.0),
             umbralSuperado,
             notificacionEnviada,
             mensaje
@@ -197,6 +211,37 @@ public class MatchingService {
     // ---------------------------------------------------------------
     // COMPONENTE 3: ESPECIE (30%)
     // ---------------------------------------------------------------
+    public double calcularScoreColor(SightingDTO sighting, PetDTO pet) {
+        String colorSighting = normalizarValor(sighting.getColor());
+        String colorPet = normalizarValor(pet.getColor());
+
+        if (colorSighting.isEmpty() || colorPet.isEmpty()) {
+            return 50.0;
+        }
+
+        return colorSighting.equals(colorPet) ? 100.0 : 0.0;
+    }
+
+    public double calcularScoreTamanio(SightingDTO sighting, PetDTO pet) {
+        String tamanioSighting = normalizarValor(sighting.getTamanio());
+        String tamanioPet = normalizarValor(pet.getTamanio());
+
+        if (tamanioSighting.isEmpty() || tamanioPet.isEmpty()) {
+            return 50.0;
+        }
+
+        if (tamanioSighting.equals(tamanioPet)) {
+            return 100.0;
+        }
+
+        Map<String, List<String>> adyacentes = new HashMap<>();
+        adyacentes.put("PEQUEÑO", Arrays.asList("MEDIANO"));
+        adyacentes.put("MEDIANO", Arrays.asList("PEQUEÑO", "GRANDE"));
+        adyacentes.put("GRANDE", Arrays.asList("MEDIANO"));
+
+        return adyacentes.getOrDefault(tamanioSighting, Collections.emptyList()).contains(tamanioPet) ? 50.0 : 0.0;
+    }
+
     private double calcularScoreEspecie(SightingDTO sighting, PetDTO pet) {
     String comentario = normalizar(sighting.getComentario());
     String especie    = normalizar(pet.getEspecie());
@@ -261,6 +306,11 @@ public class MatchingService {
                     .trim();
     }
 
+    private String normalizarValor(String valor) {
+        if (valor == null) return "";
+        return valor.trim().toUpperCase(Locale.ROOT);
+    }
+
     private void eliminarStopwords(Set<String> palabras) {
         Set<String> stopwords = new HashSet<>(Arrays.asList(
             "el", "la", "los", "las", "un", "una", "unos", "unas",
@@ -292,7 +342,7 @@ public class MatchingService {
     }
 
     private MatchResultDTO resultadoError(String sightingId, String mensaje) {
-        return new MatchResultDTO(sightingId, null, 0, 0, 0, 0, false, false, "ERROR: " + mensaje);
+        return new MatchResultDTO(sightingId, null, 0, 0, 0, 0, 0, 0, false, false, "ERROR: " + mensaje);
     }
 
     // ---------------------------------------------------------------

@@ -19,6 +19,10 @@ public class SightingRequestDTO {
     @NotNull(message = "La longitud es obligatoria")
     private Double longitud;
 
+    private String especie;
+    private String color;
+    private String tamanio;
+    private String edadAprox;
     private String comentario;
 
     // URL de Cloudinary (opcional)

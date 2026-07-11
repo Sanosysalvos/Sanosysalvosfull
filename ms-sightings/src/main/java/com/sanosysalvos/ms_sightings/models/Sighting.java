@@ -37,6 +37,18 @@ public class Sighting {
     @Column(columnDefinition = "geography(Point,4326)")
     private Point location;
 
+    @Column(name = "especie")
+    private String especie;
+
+    @Column(name = "color")
+    private String color;
+
+    @Column(name = "tamanio")
+    private String tamanio;
+
+    @Column(name = "edad_aprox")
+    private String edadAprox;
+
     // Descripción del avistamiento
     @Column(columnDefinition = "TEXT")
     private String comentario;

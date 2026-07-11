@@ -53,8 +53,9 @@ export default function ReportarPage() {
     especie: "PERRO",
     fechaPerdida: "",
     descripcion: "",
-    color: "",
-    edad: "",
+    color: "NEGRO",
+    edad: "CACHORRO",
+    tamanio: "MEDIANO",
   });
 
   const handleChange = (
@@ -135,8 +136,9 @@ export default function ReportarPage() {
       estado: "PERDIDO",
       fechaPerdida: formData.fechaPerdida,
       descripcion: formData.descripcion,
-      color: formData.color || "No especificado",
-      edad: formData.edad ? Number(formData.edad) : 0,
+      color: formData.color.toUpperCase(),
+      edad: formData.edad,
+      tamanio: formData.tamanio,
       foto: fotoUrl,
       userUid: user.uid,
       latitud,
@@ -316,20 +318,27 @@ export default function ReportarPage() {
                   htmlFor="color"
                   className="block text-sm font-medium text-slate-700 mb-1"
                 >
-                  Color o rasgos característicos
+                  Color
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Award className="h-5 w-5 text-slate-400" />
                   </div>
-                  <input
+                  <select
                     id="color"
-                    type="text"
                     value={formData.color}
                     onChange={handleChange}
-                    placeholder="Ej. Negro con manchas blancas"
                     className={inputClasses}
-                  />
+                  >
+                    <option value="NEGRO">NEGRO</option>
+                    <option value="BLANCO">BLANCO</option>
+                    <option value="CAFE">CAFE</option>
+                    <option value="GRIS">GRIS</option>
+                    <option value="AMARILLO">AMARILLO</option>
+                    <option value="ATIGRADO">ATIGRADO</option>
+                    <option value="MANCHADO">MANCHADO</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
                 </div>
               </div>
 
@@ -338,23 +347,45 @@ export default function ReportarPage() {
                   htmlFor="edad"
                   className="block text-sm font-medium text-slate-700 mb-1"
                 >
-                  Edad aproximada (años)
+                  Edad aproximada
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Info className="h-5 w-5 text-slate-400" />
                   </div>
-                  <input
+                  <select
                     id="edad"
-                    type="number"
-                    min="0"
-                    max="30"
                     value={formData.edad}
                     onChange={handleChange}
-                    placeholder="Ej. 3"
                     className={inputClasses}
-                  />
+                  >
+                    <option value="CACHORRO">CACHORRO</option>
+                    <option value="JOVEN">JOVEN</option>
+                    <option value="ADULTO">ADULTO</option>
+                    <option value="SENIOR">SENIOR</option>
+                  </select>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="tamanio"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Tamaño aproximado
+              </label>
+              <div className="relative">
+                <select
+                  id="tamanio"
+                  value={formData.tamanio}
+                  onChange={handleChange}
+                  className="block w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="PEQUEÑO">PEQUEÑO</option>
+                  <option value="MEDIANO">MEDIANO</option>
+                  <option value="GRANDE">GRANDE</option>
+                </select>
               </div>
             </div>
 

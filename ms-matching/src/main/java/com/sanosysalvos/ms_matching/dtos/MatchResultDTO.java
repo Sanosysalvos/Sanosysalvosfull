@@ -19,6 +19,8 @@ public class MatchResultDTO {
     private double scoreDistancia;
     private double scoreDescripcion;
     private double scoreEspecie;
+    private double scoreColor;
+    private double scoreTamanio;
 
     // Si se superó el umbral y se envió notificación
     private boolean umbralSuperado;

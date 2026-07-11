@@ -13,6 +13,10 @@ public class SightingDTO {
     private String reporterUid;
     private Double latitud;
     private Double longitud;
+    private String especie;
+    private String color;
+    private String tamanio;
+    private String edadAprox;
     private String comentario;
     private String fotoUrl;
     private BigDecimal porcentajeCoincidencia;

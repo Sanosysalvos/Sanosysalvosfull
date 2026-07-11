@@ -37,8 +37,23 @@ class MsMatchingApplicationTests {
         ReflectionTestUtils.setField(matchingService, "msPetsUrl", "http://ms-pets");
         ReflectionTestUtils.setField(matchingService, "msUsersUrl", "http://ms-users");
         ReflectionTestUtils.setField(matchingService, "msNotificationUrl", "http://ms-notification");
-        ReflectionTestUtils.setField(matchingService, "umbralNotificacion", 60.0);
+        ReflectionTestUtils.setField(matchingService, "umbralNotificacion", 72.0);
         ReflectionTestUtils.setField(matchingService, "radioKm", 5.0);
+    }
+
+    @Test
+    @DisplayName("Debería calcular los scores de color y tamaño con reglas normalizadas")
+    void calcularScoresColorYTamanio() {
+        SightingDTO sighting = new SightingDTO();
+        sighting.setColor("NEGRO");
+        sighting.setTamanio("MEDIANO");
+
+        PetDTO pet = new PetDTO();
+        pet.setColor("NEGRO");
+        pet.setTamanio("PEQUEÑO");
+
+        assertEquals(100.0, matchingService.calcularScoreColor(sighting, pet));
+        assertEquals(50.0, matchingService.calcularScoreTamanio(sighting, pet));
     }
 
     @Test
@@ -67,14 +82,14 @@ class MsMatchingApplicationTests {
         mockDueno.setEmail("dueno@correo.com");
 
         // Mockear las respuestas HTTP simuladas del RestTemplate
-        when(restTemplate.getForEntity("http://ms-sightings/api/sightings/" + sightingId, SightingDTO.class))
-                .thenReturn(ResponseEntity.ok(mockSighting));
+        when(restTemplate.getForObject("http://ms-sightings/api/sightings/" + sightingId, SightingDTO.class))
+                .thenReturn(mockSighting);
         
-        when(restTemplate.getForEntity("http://ms-pets/api/pets/" + petId, PetDTO.class))
-                .thenReturn(ResponseEntity.ok(mockPet));
+        when(restTemplate.getForObject("http://ms-pets/api/pets/" + petId, PetDTO.class))
+                .thenReturn(mockPet);
         
-        when(restTemplate.getForEntity("http://ms-users/api/users/firebase/" + userUid, UserDTO.class))
-                .thenReturn(ResponseEntity.ok(mockDueno));
+        when(restTemplate.getForObject("http://ms-users/api/users/" + userUid, UserDTO.class))
+                .thenReturn(mockDueno);
 
         // 2. WHEN - Ejecutar el motor de matching real
         MatchResultDTO resultado = matchingService.calcularCoincidencia(sightingId);
@@ -85,7 +100,7 @@ class MsMatchingApplicationTests {
         assertEquals(petId, resultado.getPetId());
         
         // Al procesar textos similares y misma ubicación, el score supera con creces el umbral de 60.0
-        assertTrue(resultado.getPorcentajeTotal() > 80.0, "El score total debería ser alto por compatibilidad");
+        assertTrue(resultado.getPorcentajeTotal() >= 70.0, "El score total debería superar el umbral actualizado");
         assertTrue(resultado.isUmbralSuperado());
         assertTrue(resultado.isNotificacionEnviada());
 
